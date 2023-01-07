@@ -1,13 +1,13 @@
-const routes = () => [
-  {
-    method: 'POST',
-    path: '/albums',
-    handler: () => {},
-  },
+const routes = (handler) => [
   {
     method: 'GET',
     path: '/albums/{id}',
     handler: () => {},
+  },
+  {
+    method: 'POST',
+    path: '/albums',
+    handler: handler.postAlbumHandler,
   },
   {
     method: 'PUT',
