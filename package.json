@@ -1,0 +1,25 @@
+{
+  "name": "open-music-api-v1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start-dev": "nodemon ./src/server.js",
+    "lint": "eslint ./src",
+    "migrate": "node-pg-migrate"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^8.31.0",
+    "nodemon": "^2.0.20"
+  },
+  "dependencies": {
+    "@hapi/hapi": "^21.1.0",
+    "dotenv": "^16.0.3",
+    "joi": "^17.7.0",
+    "nanoid": "^4.0.0",
+    "node-pg-migrate": "^6.2.2",
+    "pg": "^8.8.0"
+  }
+}
