@@ -1,8 +1,9 @@
+// Logic : Route -> Handler -> Service
 const routes = (handler) => [
   {
     method: 'GET',
     path: '/albums/{id}',
-    handler: () => {},
+    handler: handler.getAlbumByIdHandler,
   },
   {
     method: 'POST',
@@ -12,7 +13,7 @@ const routes = (handler) => [
   {
     method: 'PUT',
     path: '/albums/{id}',
-    handler: () => {},
+    handler: handler.putAlbumByIdHandler,
   },
   {
     method: 'DELETE',

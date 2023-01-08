@@ -7,49 +7,56 @@ class AlbumsHandler {
     this._validator = validator;
 
     this.postAlbumHandler = this.postAlbumHandler.bind(this);
+    this.getAlbumByIdHandler = this.getAlbumByIdHandler.bind(this);
+    this.putAlbumByIdHandler = this.putAlbumByIdHandler.bind(this);
+
+    // autoBind versi saat ini(ketika project dikerjakan) tidak dapat bekerja dengan require()
   }
 
   async postAlbumHandler(request, h) {
-    try {
-      this._validator.validateAlbumPayload(request.payload);
-      const { name, year } = request.payload;
-      const albumId = await this._service.addAlbum({ name, year });
+    this._validator.validateAlbumPayload(request.payload);
+    const { name, year } = request.payload;
+    const albumId = await this._service.addAlbum({ name, year });
 
-      const response = h.response({
-        status: 'success',
-        data: {
-          albumId,
-        },
-      });
+    const response = h.response({
+      status: 'success',
+      data: {
+        albumId,
+      },
+    });
 
-      response.code(201);
-      return response;
-    } catch (error) {
-      if (error instanceof ClientError) {
-        const response = h.response({
-          status: 'fail',
-          message: error.message,
-        });
-        response.code(error.statusCode);
-        return response;
-      }
-
-      const response = h.response({
-        status: 'error',
-        message: 'Maaf, terjadi kegagalan pada server kami.',
-      });
-      response.code(500);
-      console.error(error);
-      return response;
-    }
+    response.code(201);
+    return response;
   }
 
-  getAlbumByIdHandler() {
+  async getAlbumByIdHandler(request, h) {
+    const { id } = request.params;
+    const album = await this._service.getAlbumById(id);
 
+    const response = h.response({
+      status: 'success',
+      data: {
+        album,
+      },
+    });
+
+    response.code(200);
+    return response;
   }
 
-  putAlbumByIdHandler() {
+  async putAlbumByIdHandler(request, h) {
+    this._validator.validateAlbumPayload(request.payload);
+    const { id } = request.params;
+    const { name, year } = request.payload;
 
+    await this._service.editAlbumById({ id, name, year });
+
+    const response = h.response({
+      status: 'success',
+      message: 'Berhasil mengedit data album',
+    });
+    response.code(200);
+    return response;
   }
 
   deleteAlbumById() {
