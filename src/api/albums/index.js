@@ -1,3 +1,4 @@
+// Membungkus Handler dan Route menjadi 1 plugin
 const AlbumsHandler = require('./handler');
 const routes = require('./routes');
 
@@ -9,3 +10,5 @@ module.exports = {
     server.route(routes(albumsHandler));
   },
 };
+
+// instance service dan validator diperoleh dari server

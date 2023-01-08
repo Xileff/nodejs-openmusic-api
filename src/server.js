@@ -1,15 +1,19 @@
 require('dotenv').config();
 const Hapi = require('@hapi/hapi');
-
-// Plugin, service, and validator
-const AlbumsPlugin = require('./api/albums');
 const ClientError = require('./exceptions/ClientError');
+
+// Import plugin, service, and validator
+const AlbumsPlugin = require('./api/albums');
 const AlbumsService = require('./services/postgres/AlbumsService');
 const AlbumsValidator = require('./validator/albums');
+const SongsPlugin = require('./api/songs');
+const SongsService = require('./services/postgres/SongsService');
+const SongsValidator = require('./validator/songs');
 
 const init = async () => {
-  // Services
+  // Instance of services
   const albumsService = new AlbumsService();
+  const songsService = new SongsService();
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -27,7 +31,7 @@ const init = async () => {
     const { response } = request;
 
     if (response instanceof Error) {
-      // Handling client error ourselves
+      // Handling client error with our custom error -> NotFoundError/InvariantError
       if (response instanceof ClientError) {
         const newResponse = h.response({
           status: 'fail',
@@ -52,17 +56,24 @@ const init = async () => {
       return newResponse;
     }
 
-    // if there is no error, then response is not intervend
+    // if there is no error, then response is not intervened
     return h.continue;
   });
 
-  // Register plugins
+  // Registering plugins with their service and validator
   await server.register([
     {
       plugin: AlbumsPlugin,
       options: {
         service: albumsService,
         validator: AlbumsValidator,
+      },
+    },
+    {
+      plugin: SongsPlugin,
+      options: {
+        service: songsService,
+        validator: SongsValidator,
       },
     },
   ]);

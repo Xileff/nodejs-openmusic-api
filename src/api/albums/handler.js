@@ -1,17 +1,10 @@
-// const autoBind = require('auto-bind');
-const ClientError = require('../../exceptions/ClientError');
+const autoBind = require('auto-bind');
 
 class AlbumsHandler {
   constructor(service, validator) {
     this._service = service;
     this._validator = validator;
-
-    this.postAlbumHandler = this.postAlbumHandler.bind(this);
-    this.getAlbumByIdHandler = this.getAlbumByIdHandler.bind(this);
-    this.putAlbumByIdHandler = this.putAlbumByIdHandler.bind(this);
-    this.deleteAlbumByIdHandler = this.deleteAlbumByIdHandler.bind(this);
-
-    // autoBind versi saat ini(ketika project dikerjakan) tidak dapat bekerja dengan require()
+    autoBind(this);
   }
 
   async postAlbumHandler(request, h) {
@@ -30,47 +23,40 @@ class AlbumsHandler {
     return response;
   }
 
-  async getAlbumByIdHandler(request, h) {
+  async getAlbumByIdHandler(request) {
     const { id } = request.params;
     const album = await this._service.getAlbumById(id);
 
-    const response = h.response({
+    return {
       status: 'success',
       data: {
         album,
       },
-    });
-
-    response.code(200);
-    return response;
+    };
   }
 
-  async putAlbumByIdHandler(request, h) {
+  async putAlbumByIdHandler(request) {
     this._validator.validateAlbumPayload(request.payload);
     const { id } = request.params;
     const { name, year } = request.payload;
 
-    await this._service.editAlbumById({ id, name, year });
+    await this._service.editAlbumById(id, { name, year });
 
-    const response = h.response({
+    return {
       status: 'success',
       message: 'Berhasil mengedit data album',
-    });
-    response.code(200);
-    return response;
+    };
   }
 
-  async deleteAlbumByIdHandler(request, h) {
+  async deleteAlbumByIdHandler(request) {
     const { id } = request.params;
 
     await this._service.deleteAlbumById(id);
 
-    const response = h.response({
+    return {
       status: 'success',
       message: 'Berhasil menghapus album',
-    });
-    response.code(200);
-    return response;
+    };
   }
 }
 
