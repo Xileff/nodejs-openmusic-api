@@ -13,9 +13,6 @@
     "rules": {
         "no-console": "off",
         "no-underscore-dangle":"off",
-        "camelcase":"off",
-        "class-methods-use-this":"off",
-        "no-unused-vars":"off",
-        "linebreak-style":"off"
+        "camelcase":"off"
     }
 }
