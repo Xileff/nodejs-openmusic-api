@@ -9,6 +9,7 @@ class AlbumsHandler {
     this.postAlbumHandler = this.postAlbumHandler.bind(this);
     this.getAlbumByIdHandler = this.getAlbumByIdHandler.bind(this);
     this.putAlbumByIdHandler = this.putAlbumByIdHandler.bind(this);
+    this.deleteAlbumByIdHandler = this.deleteAlbumByIdHandler.bind(this);
 
     // autoBind versi saat ini(ketika project dikerjakan) tidak dapat bekerja dengan require()
   }
@@ -59,8 +60,17 @@ class AlbumsHandler {
     return response;
   }
 
-  deleteAlbumById() {
+  async deleteAlbumByIdHandler(request, h) {
+    const { id } = request.params;
 
+    await this._service.deleteAlbumById(id);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Berhasil menghapus album',
+    });
+    response.code(200);
+    return response;
   }
 }
 
