@@ -19,52 +19,24 @@ class SongsService {
       values: [id, title, year, genre, performer, duration, albumId],
     };
 
-    const result = await this._pool.query(query);
+    const { rows } = await this._pool.query(query);
 
-    if (!result.rows[0].id) {
-      throw new InvariantError('Song gagal ditambahkan');
+    if (!rows[0].id) {
+      throw new InvariantError('Lagu gagal ditambahkan');
     }
 
-    return result.rows[0].id;
+    return rows[0].id;
   }
 
-  async getSongs({ title, performer }) {
-    let query;
-    let result;
+  async getSongs({ title = '', performer = '' }) {
+    const query = {
+      text: 'SELECT id, title, performer FROM songs WHERE title ILIKE $1 AND performer ILIKE $2;',
+      values: [`%${title}%`, `%${performer}%`],
+    };
 
-    if (!title && !performer) {
-      query = {
-        text: 'SELECT id, title, performer FROM songs;',
-        values: [],
-      };
-      result = await this._pool.query(query);
-    }
+    const { rows } = await this._pool.query(query);
 
-    if (title && !performer) {
-      query = {
-        text: 'SELECT id, title, performer FROM songs WHERE title iLIKE $1',
-        values: [`%${title}%`],
-      };
-      result = await this._pool.query(query);
-    }
-
-    if (!title && performer) {
-      query = {
-        text: 'SELECT id, title, performer FROM songs WHERE performer iLIKE $1',
-        values: [`%${performer}%`],
-      };
-      result = await this._pool.query(query);
-    }
-
-    if (title && performer) {
-      query = {
-        text: 'SELECT id, title, performer FROM songs WHERE title iLIKE $1 AND performer iLIKE $2',
-        values: [`%${title}%`, `%${performer}%`],
-      };
-      result = await this._pool.query(query);
-    }
-
-    return result.rows.map(mapSongsToModel);
+    return rows.map(mapSongsToModel);
   }
 
   async getSongById(id) {
