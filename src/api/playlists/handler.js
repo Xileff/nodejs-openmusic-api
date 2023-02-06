@@ -47,8 +47,19 @@ class PlaylistsHandler {
     const { id: playlistId } = request.params;
     const { songId } = request.payload;
 
-    await this._service.verifyPlaylistOwner(playlistId, credentialId);
-    // todo : add collaborator check instead of just checking owner
+    try {
+      await this._service.verifyPlaylistOwner(playlistId, credentialId);
+    } catch (error) {
+      if (error instanceof AuthorizationError) {
+        const collaborator = await this._service.verifyCollaborator(playlistId, credentialId);
+        if (!collaborator) {
+          throw new AuthorizationError('Anda bukan kolaborator playlist ini');
+        }
+      } else {
+        throw error;
+      }
+    }
+
     await this._service.verifySongExists(songId);
     await this._service.addSongToPlaylist(playlistId, songId, credentialId);
 
@@ -59,20 +70,20 @@ class PlaylistsHandler {
     response.code(201);
 
     return response;
-  } //
+  }
 
   async getPlaylistSongsByIdHandler(request) {
     const { id: playlistId } = request.params;
     const { id: credentialId } = request.auth.credentials;
 
-    // todo : add collaborator check instead of just checking owner. maybe do try catch here
-    // maybe we can make a function to simplify this process
     try {
       await this._service.verifyPlaylistOwner(playlistId, credentialId);
     } catch (error) {
       if (error instanceof AuthorizationError) {
-        console.log('Check collaborator');
-        throw error; // this should be removed later
+        const collaborator = await this._service.verifyCollaborator(playlistId, credentialId);
+        if (!collaborator) {
+          throw new AuthorizationError('Anda bukan kolaborator playlist ini');
+        }
       } else {
         throw error;
       }
@@ -94,7 +105,19 @@ class PlaylistsHandler {
     const { songId } = request.payload;
     const { id: credentialId } = request.auth.credentials;
 
-    await this._service.verifyPlaylistOwner(playlistId, credentialId);
+    try {
+      await this._service.verifyPlaylistOwner(playlistId, credentialId);
+    } catch (error) {
+      if (error instanceof AuthorizationError) {
+        const collaborator = await this._service.verifyCollaborator(playlistId, credentialId);
+        if (!collaborator) {
+          throw new AuthorizationError('Anda bukan kolaborator playlist ini');
+        }
+      } else {
+        throw error;
+      }
+    }
+
     await this._service.verifySongExists(songId);
     await this._service.deleteSongInPlaylist(playlistId, songId, credentialId);
 
@@ -102,7 +125,7 @@ class PlaylistsHandler {
       status: 'success',
       message: 'Song berhasil dihapus dari playlist',
     };
-  } //
+  }
 
   async deletePlaylistByIdHandler(request) {
     const { id: playlistId } = request.params;

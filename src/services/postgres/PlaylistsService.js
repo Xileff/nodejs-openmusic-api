@@ -3,11 +3,11 @@ const { nanoid } = require('nanoid');
 const NotFoundError = require('../../exceptions/NotFoundError');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
 const InvariantError = require('../../exceptions/InvariantError');
-const { mapPlaylistsToModel } = require('../../utils/index');
 
 class PlaylistsService {
-  constructor() {
+  constructor(collaborationsService) {
     this._pool = new Pool();
+    this._collaborationsService = collaborationsService;
   }
 
   async addPlaylist(name, owner) {
@@ -25,14 +25,19 @@ class PlaylistsService {
     return result.rows[0].id;
   }
 
-  async getPlaylists(owner) {
+  async getPlaylists(userId) {
     const query = {
-      text: 'SELECT * FROM playlists WHERE owner = $1',
-      values: [owner],
+      text: `SELECT p.id, p.name, u.username FROM playlists p 
+      LEFT JOIN collaborations c ON p.id = c.playlist_id
+      LEFT JOIN users u ON p.owner = u.id
+      WHERE p.owner = $1 OR c.user_id = $1
+      GROUP BY p.id, u.username
+      `,
+      values: [userId],
     };
 
     const result = await this._pool.query(query);
-    return result.rows.map(mapPlaylistsToModel);
+    return result.rows;
   }
 
   async addSongToPlaylist(playlistId, songId, userId) {
@@ -173,6 +178,11 @@ class PlaylistsService {
     if (playlist.owner !== owner) {
       throw new AuthorizationError('Anda tidak berhak mengakses resource ini.');
     }
+  }
+
+  async verifyCollaborator(playlistId, userId) {
+    const id = await this._collaborationsService.verifyCollaborator(playlistId, userId);
+    return id;
   }
 
   async verifySongExists(songId) {
