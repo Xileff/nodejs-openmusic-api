@@ -50,6 +50,7 @@ const init = async () => {
   });
 
   // Error handling
+  // Jika sudah pake ext onPreResponse, tidak boleh pake trycatch di Service
   server.ext('onPreResponse', (request, h) => {
     // Getting the context of response from the request
     const { response } = request;

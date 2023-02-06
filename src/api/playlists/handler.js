@@ -1,4 +1,5 @@
 const autoBind = require('auto-bind');
+const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsHandler {
   constructor(playlistService, playlistValidator) {
@@ -14,7 +15,7 @@ class PlaylistsHandler {
     const { name } = request.payload;
     const { id: credentialId } = request.auth.credentials;
 
-    const playlistId = await this._service.addPlaylist({ name, owner: credentialId });
+    const playlistId = await this._service.addPlaylist(name, credentialId);
 
     const response = h.response({
       status: 'success',
@@ -27,10 +28,9 @@ class PlaylistsHandler {
     return response;
   }
 
-  async getPlaylistsHandler(request, h) {
-    // get user id
-    const id = 1;
-    const playlists = await this._service.getPlaylists(id);
+  async getPlaylistsHandler(request) {
+    const { id: credentialId } = request.auth.credentials;
+    const playlists = await this._service.getPlaylists(credentialId);
 
     return {
       status: 'success',
@@ -40,21 +40,82 @@ class PlaylistsHandler {
     };
   }
 
-  // async deletePlaylistsByIdHandler(request, h) {
+  async postPlaylistSongHandler(request, h) {
+    this._validator.validatePostPlaylistSongPayload(request.payload);
 
-  // }
+    const { id: credentialId } = request.auth.credentials;
+    const { id: playlistId } = request.params;
+    const { songId } = request.payload;
 
-  // async postPlaylistsSongByIdHandler(request, h) {
+    await this._service.verifyPlaylistOwner(playlistId, credentialId);
+    // todo : add collaborator check instead of just checking owner
+    await this._service.verifySongExists(songId);
+    await this._service.addSongToPlaylist(playlistId, songId);
 
-  // }
+    const response = h.response({
+      status: 'success',
+      message: 'Song berhasil ditambahkan ke playlist',
+    });
+    response.code(201);
 
-  // async getPlaylistsSongByIdHandler(request, h) {
+    return response;
+  }
 
-  // }
+  async getPlaylistSongsByIdHandler(request) {
+    const { id: playlistId } = request.params;
+    const { id: credentialId } = request.auth.credentials;
 
-  // async deletePlaylistsSongByIdHandler(request, h) {
+    // todo : add collaborator check instead of just checking owner. maybe do try catch here
+    // maybe we can make a function to simplify this process
+    try {
+      await this._service.verifyPlaylistOwner(playlistId, credentialId);
+    } catch (error) {
+      if (error instanceof AuthorizationError) {
+        console.log('Check collaborator');
+        throw error;
+      } else {
+        throw error;
+      }
+    }
+    const playlist = await this._service.getSongsInPlaylist(playlistId);
 
-  // }
+    return {
+      status: 'success',
+      data: {
+        playlist,
+      },
+    };
+  }
+
+  async deletePlaylistSongByIdHandler(request) {
+    this._validator.validateDeletePlaylistSongPayload(request.payload);
+
+    const { id: playlistId } = request.params;
+    const { songId } = request.payload;
+    const { id: credentialId } = request.auth.credentials;
+
+    await this._service.verifyPlaylistOwner(playlistId, credentialId);
+    await this._service.verifySongExists(songId);
+    await this._service.deleteSongInPlaylist(playlistId, songId);
+
+    return {
+      status: 'success',
+      message: 'Song berhasil dihapus dari playlist',
+    };
+  }
+
+  async deletePlaylistByIdHandler(request) {
+    const { id: playlistId } = request.params;
+    const { id: credentialId } = request.auth.credentials;
+
+    await this._service.verifyPlaylistOwner(playlistId, credentialId);
+    await this._service.deletePlaylist(playlistId);
+
+    return {
+      status: 'success',
+      message: 'Berhasil menghapus playlist',
+    };
+  }
 }
 
 module.exports = PlaylistsHandler;
