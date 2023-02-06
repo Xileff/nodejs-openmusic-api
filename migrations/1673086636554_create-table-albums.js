@@ -18,5 +18,6 @@ exports.up = (pgm) => {
 };
 
 exports.down = (pgm) => {
+  pgm.sql('TRUNCATE TABLE albums CASCADE');
   pgm.dropTable('albums');
 };

@@ -50,7 +50,7 @@ class PlaylistsHandler {
     await this._service.verifyPlaylistOwner(playlistId, credentialId);
     // todo : add collaborator check instead of just checking owner
     await this._service.verifySongExists(songId);
-    await this._service.addSongToPlaylist(playlistId, songId);
+    await this._service.addSongToPlaylist(playlistId, songId, credentialId);
 
     const response = h.response({
       status: 'success',
@@ -59,7 +59,7 @@ class PlaylistsHandler {
     response.code(201);
 
     return response;
-  }
+  } //
 
   async getPlaylistSongsByIdHandler(request) {
     const { id: playlistId } = request.params;
@@ -72,7 +72,7 @@ class PlaylistsHandler {
     } catch (error) {
       if (error instanceof AuthorizationError) {
         console.log('Check collaborator');
-        throw error;
+        throw error; // this should be removed later
       } else {
         throw error;
       }
@@ -96,13 +96,13 @@ class PlaylistsHandler {
 
     await this._service.verifyPlaylistOwner(playlistId, credentialId);
     await this._service.verifySongExists(songId);
-    await this._service.deleteSongInPlaylist(playlistId, songId);
+    await this._service.deleteSongInPlaylist(playlistId, songId, credentialId);
 
     return {
       status: 'success',
       message: 'Song berhasil dihapus dari playlist',
     };
-  }
+  } //
 
   async deletePlaylistByIdHandler(request) {
     const { id: playlistId } = request.params;
@@ -114,6 +114,22 @@ class PlaylistsHandler {
     return {
       status: 'success',
       message: 'Berhasil menghapus playlist',
+    };
+  }
+
+  async getPlaylistActivitiesByIdHandler(request) {
+    const { id: playlistId } = request.params;
+    const { id: credentialId } = request.auth.credentials;
+
+    await this._service.verifyPlaylistOwner(playlistId, credentialId);
+    const activities = await this._service.getPlaylistActivitiesById(playlistId);
+
+    return {
+      status: 'success',
+      data: {
+        playlistId,
+        activities,
+      },
     };
   }
 }
