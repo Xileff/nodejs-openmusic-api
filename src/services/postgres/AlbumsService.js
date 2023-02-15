@@ -5,8 +5,9 @@ const NotFoundError = require('../../exceptions/NotFoundError');
 const { mapAlbumsToModel } = require('../../utils/mapping');
 
 class AlbumsService {
-  constructor() {
+  constructor(cacheService) {
     this._pool = new Pool();
+    this._cacheService = cacheService;
   }
 
   // Crud
@@ -86,6 +87,66 @@ class AlbumsService {
 
     if (!result.rowCount) {
       throw new NotFoundError('Gagal memasukkan cover album karena id tidak ditemukan');
+    }
+  }
+
+  async setAlbumLikesById(id, userId) {
+    const likeId = `likes-${nanoid(16)}`;
+
+    const queryCheck = {
+      text: 'SELECT id FROM user_album_likes WHERE user_id = $1 AND album_id = $2',
+      values: [userId, id],
+    };
+    const resultCheck = await this._pool.query(queryCheck);
+
+    if (resultCheck.rowCount) {
+      const queryDelete = {
+        text: 'DELETE FROM user_album_likes WHERE user_id = $1 AND album_id = $2',
+        values: [userId, id],
+      };
+      await this._pool.query(queryDelete);
+    } else {
+      const queryAdd = {
+        text: 'INSERT INTO user_album_likes VALUES($1, $2, $3)',
+        values: [likeId, userId, id],
+      };
+      await this._pool.query(queryAdd);
+    }
+    await this._cacheService.del(`likes-of-album:${id}`);
+  }
+
+  async getAlbumLikesById(id) {
+    try {
+      const result = await this._cacheService.get(`likes-of-album:${id}`);
+      return {
+        isCache: true,
+        likes: JSON.parse(result),
+      };
+    } catch (error) {
+      const query = {
+        text: 'SELECT COUNT(id) FROM user_album_likes WHERE album_id = $1',
+        values: [id],
+      };
+      const result = await this._pool.query(query);
+
+      await this._cacheService.set(`likes-of-album:${id}`, JSON.stringify(result.rows[0].count));
+
+      return {
+        isCache: false,
+        likes: result.rows[0].count,
+      };
+    }
+  }
+
+  async verifyAlbumExists(id) {
+    const query = {
+      text: 'SELECT id FROM albums WHERE id = $1',
+      values: [id],
+    };
+
+    const result = await this._pool.query(query);
+    if (!result.rowCount) {
+      throw new NotFoundError('Album tidak ditemukan');
     }
   }
 }

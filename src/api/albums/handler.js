@@ -64,6 +64,41 @@ class AlbumsHandler {
       message: 'Berhasil menghapus album',
     };
   }
+
+  async postAlbumLikesByIdHandler(request, h) {
+    const { id } = request.params;
+    const { id: credentialId } = request.auth.credentials;
+
+    await this._service.verifyAlbumExists(id);
+    await this._service.setAlbumLikesById(id, credentialId);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Berhasil mengubah likes album',
+    });
+    response.code(201);
+    return response;
+  }
+
+  async getAlbumLikesByIdHandler(request, h) {
+    const { id } = request.params;
+
+    await this._service.verifyAlbumExists(id);
+    const { isCache, likes } = await this._service.getAlbumLikesById(id);
+
+    const response = h.response({
+      status: 'success',
+      data: {
+        likes: Number(likes),
+      },
+    });
+
+    if (isCache) {
+      response.header('X-Data-Source', 'cache');
+    }
+
+    return response;
+  }
 }
 
 module.exports = AlbumsHandler;
