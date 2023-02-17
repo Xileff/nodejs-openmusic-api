@@ -5,9 +5,8 @@ const AuthorizationError = require('../../exceptions/AuthorizationError');
 const InvariantError = require('../../exceptions/InvariantError');
 
 class PlaylistsService {
-  constructor(collaborationsService) {
+  constructor() {
     this._pool = new Pool();
-    this._collaborationsService = collaborationsService;
   }
 
   async addPlaylist(name, owner) {
@@ -180,11 +179,6 @@ class PlaylistsService {
     }
   }
 
-  async verifyCollaborator(playlistId, userId) {
-    const id = await this._collaborationsService.verifyCollaborator(playlistId, userId);
-    return id;
-  }
-
   async verifySongExists(songId) {
     const query = {
       text: 'SELECT id FROM songs WHERE id = $1',
@@ -194,6 +188,18 @@ class PlaylistsService {
     const result = await this._pool.query(query);
     if (!result.rowCount) {
       throw new NotFoundError('Song tidak ditemukan');
+    }
+  }
+
+  async verifyPlaylistExists(playlistId) {
+    const queryPlaylist = {
+      text: 'SELECT id FROM playlists WHERE id = $1',
+      values: [playlistId],
+    };
+    const resultPlaylist = await this._pool.query(queryPlaylist);
+
+    if (!resultPlaylist.rowCount) {
+      throw new NotFoundError('Gagal menambahkan kolaborasi karena Playlist tidak ditemukan.');
     }
   }
 }

@@ -2,6 +2,7 @@ const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 const bcrypt = require('bcrypt');
 const InvariantError = require('../../exceptions/InvariantError');
+const NotFoundError = require('../../exceptions/NotFoundError');
 const AuthenticationError = require('../../exceptions/AuthenticationError');
 
 class UsersService {
@@ -62,6 +63,19 @@ class UsersService {
     }
 
     return id;
+  }
+
+  async verifyUserExists(userId) {
+    const queryUser = {
+      text: 'SELECT id FROM users WHERE id = $1',
+      values: [userId],
+    };
+
+    const resultUser = await this._pool.query(queryUser);
+
+    if (!resultUser.rowCount) {
+      throw new NotFoundError('Gagal menambahkan kolaborasi karena User tidak ditemukan.');
+    }
   }
 }
 

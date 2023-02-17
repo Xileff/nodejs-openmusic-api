@@ -2,9 +2,10 @@ const autoBind = require('auto-bind');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsHandler {
-  constructor(playlistService, playlistValidator) {
-    this._service = playlistService;
-    this._validator = playlistValidator;
+  constructor(playlistsService, collaborationsService, validator) {
+    this._playlistsService = playlistsService;
+    this._collaborationsService = collaborationsService;
+    this._validator = validator;
 
     autoBind(this);
   }
@@ -15,7 +16,7 @@ class PlaylistsHandler {
     const { name } = request.payload;
     const { id: credentialId } = request.auth.credentials;
 
-    const playlistId = await this._service.addPlaylist(name, credentialId);
+    const playlistId = await this._playlistsService.addPlaylist(name, credentialId);
 
     const response = h.response({
       status: 'success',
@@ -30,7 +31,7 @@ class PlaylistsHandler {
 
   async getPlaylistsHandler(request) {
     const { id: credentialId } = request.auth.credentials;
-    const playlists = await this._service.getPlaylists(credentialId);
+    const playlists = await this._playlistsService.getPlaylists(credentialId);
 
     return {
       status: 'success',
@@ -48,10 +49,11 @@ class PlaylistsHandler {
     const { songId } = request.payload;
 
     try {
-      await this._service.verifyPlaylistOwner(playlistId, credentialId);
+      await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
     } catch (error) {
       if (error instanceof AuthorizationError) {
-        const collaborator = await this._service.verifyCollaborator(playlistId, credentialId);
+        const collaborator = await
+        this._collaborationsService.verifyCollaborator(playlistId, credentialId);
         if (!collaborator) {
           throw new AuthorizationError('Anda bukan kolaborator playlist ini');
         }
@@ -60,8 +62,8 @@ class PlaylistsHandler {
       }
     }
 
-    await this._service.verifySongExists(songId);
-    await this._service.addSongToPlaylist(playlistId, songId, credentialId);
+    await this._playlistsService.verifySongExists(songId);
+    await this._playlistsService.addSongToPlaylist(playlistId, songId, credentialId);
 
     const response = h.response({
       status: 'success',
@@ -77,10 +79,11 @@ class PlaylistsHandler {
     const { id: credentialId } = request.auth.credentials;
 
     try {
-      await this._service.verifyPlaylistOwner(playlistId, credentialId);
+      await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
     } catch (error) {
       if (error instanceof AuthorizationError) {
-        const collaborator = await this._service.verifyCollaborator(playlistId, credentialId);
+        const collaborator = await
+        this._collaborationsService.verifyCollaborator(playlistId, credentialId);
         if (!collaborator) {
           throw new AuthorizationError('Anda bukan kolaborator playlist ini');
         }
@@ -88,7 +91,7 @@ class PlaylistsHandler {
         throw error;
       }
     }
-    const playlist = await this._service.getSongsInPlaylist(playlistId);
+    const playlist = await this._playlistsService.getSongsInPlaylist(playlistId);
 
     return {
       status: 'success',
@@ -106,10 +109,11 @@ class PlaylistsHandler {
     const { id: credentialId } = request.auth.credentials;
 
     try {
-      await this._service.verifyPlaylistOwner(playlistId, credentialId);
+      await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
     } catch (error) {
       if (error instanceof AuthorizationError) {
-        const collaborator = await this._service.verifyCollaborator(playlistId, credentialId);
+        const collaborator = await
+        this._collaborationsService.verifyCollaborator(playlistId, credentialId);
         if (!collaborator) {
           throw new AuthorizationError('Anda bukan kolaborator playlist ini');
         }
@@ -118,8 +122,8 @@ class PlaylistsHandler {
       }
     }
 
-    await this._service.verifySongExists(songId);
-    await this._service.deleteSongInPlaylist(playlistId, songId, credentialId);
+    await this._playlistsService.verifySongExists(songId);
+    await this._playlistsService.deleteSongInPlaylist(playlistId, songId, credentialId);
 
     return {
       status: 'success',
@@ -131,8 +135,8 @@ class PlaylistsHandler {
     const { id: playlistId } = request.params;
     const { id: credentialId } = request.auth.credentials;
 
-    await this._service.verifyPlaylistOwner(playlistId, credentialId);
-    await this._service.deletePlaylist(playlistId);
+    await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
+    await this._playlistsService.deletePlaylist(playlistId);
 
     return {
       status: 'success',
@@ -144,8 +148,8 @@ class PlaylistsHandler {
     const { id: playlistId } = request.params;
     const { id: credentialId } = request.auth.credentials;
 
-    await this._service.verifyPlaylistOwner(playlistId, credentialId);
-    const activities = await this._service.getPlaylistActivitiesById(playlistId);
+    await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
+    const activities = await this._playlistsService.getPlaylistActivitiesById(playlistId);
 
     return {
       status: 'success',

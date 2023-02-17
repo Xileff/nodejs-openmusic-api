@@ -4,32 +4,15 @@ const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 
 class CollaborationsService {
-  constructor() {
+  constructor(usersService, playlistsService) {
     this._pool = new Pool();
+    this._usersService = usersService;
+    this._playlistsService = playlistsService;
   }
 
   async addCollaborator(playlistId, userId) {
-    // cek if user exists
-    const queryUser = {
-      text: 'SELECT id FROM users WHERE id = $1',
-      values: [userId],
-    };
-    const resultUser = await this._pool.query(queryUser);
-
-    if (!resultUser.rowCount) {
-      throw new NotFoundError('Gagal menambahkan kolaborasi karena User tidak ditemukan.');
-    }
-
-    // cek if playlist exists
-    const queryPlaylist = {
-      text: 'SELECT id FROM playlists WHERE id = $1',
-      values: [playlistId],
-    };
-    const resultPlaylist = await this._pool.query(queryPlaylist);
-
-    if (!resultPlaylist.rowCount) {
-      throw new NotFoundError('Gagal menambahkan kolaborasi karena Playlist tidak ditemukan.');
-    }
+    await this._usersService.verifyUserExists(userId);
+    await this._playlistsService.verifyPlaylistExists(playlistId);
 
     const collaborationsId = `collaborations-${nanoid(16)}`;
     const query = {
