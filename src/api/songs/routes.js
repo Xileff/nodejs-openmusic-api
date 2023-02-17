@@ -1,4 +1,3 @@
-// Logic : Route -> Handler -> Service
 const routes = (handler) => [
   {
     method: 'POST',

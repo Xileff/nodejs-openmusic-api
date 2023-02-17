@@ -8,7 +8,6 @@ class SongsService {
     this._pool = new Pool();
   }
 
-  // Crud methods
   async addSong({
     title, year, genre, performer, duration, albumId,
   }) {

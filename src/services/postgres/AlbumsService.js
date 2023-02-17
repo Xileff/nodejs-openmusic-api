@@ -10,7 +10,6 @@ class AlbumsService {
     this._cacheService = cacheService;
   }
 
-  // Crud
   async addAlbum({ name, year }) {
     const id = `album-${nanoid(16)}`;
     const query = {

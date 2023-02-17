@@ -17,12 +17,10 @@ class ExportsHandler {
     const { targetEmail } = request.payload;
     await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
 
-    // Register queue
-    const message = {
+    await this._producerService.sendMessage('export:playlist', JSON.stringify({
       targetEmail,
       playlistId,
-    };
-    await this._producerService.sendMessage('export:playlist', JSON.stringify(message));
+    }));
 
     const response = h.response({
       status: 'success',
