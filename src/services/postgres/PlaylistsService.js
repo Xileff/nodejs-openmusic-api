@@ -179,18 +179,6 @@ class PlaylistsService {
     }
   }
 
-  async verifySongExists(songId) {
-    const query = {
-      text: 'SELECT id FROM songs WHERE id = $1',
-      values: [songId],
-    };
-
-    const result = await this._pool.query(query);
-    if (!result.rowCount) {
-      throw new NotFoundError('Song tidak ditemukan');
-    }
-  }
-
   async verifyPlaylistExists(playlistId) {
     const queryPlaylist = {
       text: 'SELECT id FROM playlists WHERE id = $1',

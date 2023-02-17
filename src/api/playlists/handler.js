@@ -2,8 +2,9 @@ const autoBind = require('auto-bind');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsHandler {
-  constructor(playlistsService, collaborationsService, validator) {
+  constructor(playlistsService, songsService, collaborationsService, validator) {
     this._playlistsService = playlistsService;
+    this._songsService = songsService;
     this._collaborationsService = collaborationsService;
     this._validator = validator;
 
@@ -48,21 +49,8 @@ class PlaylistsHandler {
     const { id: playlistId } = request.params;
     const { songId } = request.payload;
 
-    try {
-      await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
-    } catch (error) {
-      if (error instanceof AuthorizationError) {
-        const collaborator = await
-        this._collaborationsService.verifyCollaborator(playlistId, credentialId);
-        if (!collaborator) {
-          throw new AuthorizationError('Anda bukan kolaborator playlist ini');
-        }
-      } else {
-        throw error;
-      }
-    }
-
-    await this._playlistsService.verifySongExists(songId);
+    await this._collaborationsService.verifyAccess(playlistId, credentialId);
+    await this._songsService.verifySongExists(songId);
     await this._playlistsService.addSongToPlaylist(playlistId, songId, credentialId);
 
     const response = h.response({
@@ -77,22 +65,9 @@ class PlaylistsHandler {
   async getPlaylistSongsByIdHandler(request) {
     const { id: playlistId } = request.params;
     const { id: credentialId } = request.auth.credentials;
+    await this._collaborationsService.verifyAccess(playlistId, credentialId);
 
-    try {
-      await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
-    } catch (error) {
-      if (error instanceof AuthorizationError) {
-        const collaborator = await
-        this._collaborationsService.verifyCollaborator(playlistId, credentialId);
-        if (!collaborator) {
-          throw new AuthorizationError('Anda bukan kolaborator playlist ini');
-        }
-      } else {
-        throw error;
-      }
-    }
     const playlist = await this._playlistsService.getSongsInPlaylist(playlistId);
-
     return {
       status: 'success',
       data: {
@@ -122,7 +97,7 @@ class PlaylistsHandler {
       }
     }
 
-    await this._playlistsService.verifySongExists(songId);
+    await this._songsService.verifySongExists(songId);
     await this._playlistsService.deleteSongInPlaylist(playlistId, songId, credentialId);
 
     return {

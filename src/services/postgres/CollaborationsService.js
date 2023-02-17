@@ -1,7 +1,7 @@
 const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 const InvariantError = require('../../exceptions/InvariantError');
-const NotFoundError = require('../../exceptions/NotFoundError');
+const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class CollaborationsService {
   constructor(usersService, playlistsService) {
@@ -29,27 +29,8 @@ class CollaborationsService {
   }
 
   async removeCollaborator(playlistId, userId) {
-    // cek if user exists
-    const queryUser = {
-      text: 'SELECT id FROM users WHERE id = $1',
-      values: [userId],
-    };
-    const resultUser = await this._pool.query(queryUser);
-
-    if (!resultUser.rowCount) {
-      throw new NotFoundError('Gagal menambahkan kolaborasi karena User tidak ditemukan.');
-    }
-
-    // cek if playlist exists
-    const queryPlaylist = {
-      text: 'SELECT id FROM playlists WHERE id = $1',
-      values: [playlistId],
-    };
-    const resultPlaylist = await this._pool.query(queryPlaylist);
-
-    if (!resultPlaylist.rowCount) {
-      throw new NotFoundError('Gagal menambahkan kolaborasi karena Playlist tidak ditemukan.');
-    }
+    await this._usersService.verifyUserExists(userId);
+    await this._playlistsService.verifyPlaylistExists(playlistId);
 
     const query = {
       text: 'DELETE FROM collaborations WHERE playlist_id = $1 AND user_id = $2 RETURNING id',
@@ -67,6 +48,21 @@ class CollaborationsService {
     };
     const result = await this._pool.query(query);
     return result.rowCount;
+  }
+
+  async verifyAccess(playlistId, userId) {
+    try {
+      await this._playlistsService.verifyPlaylistOwner(playlistId, userId);
+    } catch (error) {
+      if (error instanceof AuthorizationError) {
+        const collaborator = await this.verifyCollaborator(playlistId, userId);
+        if (!collaborator) {
+          throw new AuthorizationError('Anda bukan kolaborator playlist ini');
+        }
+      } else {
+        throw error;
+      }
+    }
   }
 }
 
